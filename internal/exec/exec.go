@@ -73,8 +73,8 @@ func (r *Request) execSelections(ctx context.Context, sels []selected.Selection,
 		for _, f := range fields {
 			go func(f *fieldWithResolver) {
 				defer r.handlePanic(ctx)
+				defer wg.Done()
 				r.execFieldSelection(ctx, f.field, f.resolver, &f.out, false)
-				wg.Done()
 			}(f)
 		}
 		wg.Wait()
@@ -205,7 +205,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 	case *schema.Object, *schema.Interface, *schema.Union:
 		if resolver.IsNil() {
 			if nonNull {
-				panic(errors.Errorf("got nil for non-null %q", t))
+				r.AddError(errors.Errorf("got nil for non-null %q", t))
 			}
 			out.WriteString("null")
 			return

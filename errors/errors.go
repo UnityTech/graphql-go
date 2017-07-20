@@ -10,6 +10,7 @@ type QueryError struct {
 	Path          []interface{} `json:"path,omitempty"`
 	Rule          string        `json:"-"`
 	ResolverError error         `json:"-"`
+	SourceMap     *SourceMap    `json:"-"`
 }
 
 type Location struct {
@@ -33,7 +34,13 @@ func (err *QueryError) Error() string {
 	}
 	str := fmt.Sprintf("graphql: %s", err.Message)
 	for _, loc := range err.Locations {
-		str += fmt.Sprintf(" (line %d, column %d)", loc.Line, loc.Column)
+		if err.SourceMap == nil {
+			str += fmt.Sprintf(" (line %d, column %d)", loc.Line, loc.Column)
+		} else {
+			line, file := err.SourceMap.LineInFile(loc.Line)
+			str += fmt.Sprintf(" (file %s, line %d, column %d)", file, line, loc.Column)
+		}
+
 	}
 	return str
 }
